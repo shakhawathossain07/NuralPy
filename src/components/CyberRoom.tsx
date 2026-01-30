@@ -5,6 +5,7 @@ import { usePerformanceSettings } from '../hooks/usePerformanceSettings';
 
 import { HoloProjector } from './HoloProjector';
 import { StageScreen } from './StageScreen';
+import { ServerRack } from './ServerRack';
 
 // Lazy load PythonEditor for better initial load performance
 const PythonEditor = lazy(() => import('./PythonEditor').then(m => ({ default: m.PythonEditor })));
@@ -136,21 +137,16 @@ export const CyberRoom: React.FC<CyberRoomProps> = ({ onPythonError, voiceComman
                 />
             ))}
 
+
+
             {/* --- SERVER COLUMNS --- */}
             {[-20, 20].map((x, i) => (
-                <group key={i} position={[x, 5, -5]}>
-                    <mesh>
-                        <boxGeometry args={[2, 12, 2]} />
-                        <meshStandardMaterial color="#0a0a12" roughness={0.3} metalness={0.8} />
-                    </mesh>
-                    {/* Data Lights - reduced count on lower quality */}
-                    {Array.from({ length: serverLightCount }).map((_, j) => (
-                        <mesh key={j} position={[0, -4 + j * (10 / serverLightCount), 1.01]}>
-                            <planeGeometry args={[1.5, 0.1]} />
-                            <meshBasicMaterial color={j % 2 === 0 ? "#22d3ee" : "#d946ef"} toneMapped={false} />
-                        </mesh>
-                    ))}
-                </group>
+                <ServerRack
+                    key={i}
+                    position={[x as any, 5, -5]}
+                    lightCount={serverLightCount}
+                    getFrequencyData={getFrequencyData}
+                />
             ))}
 
 
