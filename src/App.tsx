@@ -11,8 +11,6 @@ function AppContent() {
   const {
     characters,
     logs,
-    isPlaying,
-    setIsPlaying,
     context,
     addLog
   } = useSimulation();

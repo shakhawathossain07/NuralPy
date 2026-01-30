@@ -93,7 +93,7 @@ export const generateHologramCode = async (userPrompt: string): Promise<Hologram
             cleanCode = text
                 .replace(/```/g, "")
                 .split('\n')
-                .filter(line => {
+                .filter((line: string) => {
                     const l = line.trim();
                     if (l.startsWith("Here is")) return false;
                     if (l.startsWith("Okay")) return false;
