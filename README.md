@@ -39,7 +39,7 @@ graph TD
 ### 🧠 Intelligent AI Companion: Luna
 Luna is not just a chatbot; she is an autonomous entity living in the simulation.
 *   **Role**: AI Learning Assistant & Mentor.
-*   **Brain**: Powered by **Gemini 2.0/3.0**, capable of deep context understanding and code analysis.
+*   **Brain**: Powered by **Gemini 3.0**, capable of deep context understanding and code analysis.
 *   **Voice**: Integrated **ElevenLabs** TTS for natural, emotive speech.
 *   **Behavior**:
     *   **Autonomous Wandering**: She walks freely, follows you, and explores the hub.
