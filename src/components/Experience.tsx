@@ -1,4 +1,4 @@
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { RealisticSky } from './RealisticSky';
 import type { Character, SimulationLog } from '../types/Character';
@@ -12,6 +12,7 @@ import { speakText } from '../services/elevenlabs';
 
 import { useVoiceInteraction } from '../hooks/useVoiceInteraction';
 import { generateHologramCode } from '../services/codeGenerator';
+import { useAudioAnalyzer } from '../hooks/useAudioAnalyzer';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 
@@ -25,6 +26,7 @@ interface ExperienceProps {
 export const Experience: React.FC<ExperienceProps> = ({ characters, logs: _logs, context, addLog }) => {
     const { settings } = usePerformanceSettings();
     const { state: voiceState, transcript, aiResponse, startListening } = useVoiceInteraction(context);
+    const { startListening: startAudio, stopListening: stopAudio, isListening: isAudioActive, getFrequencyData } = useAudioAnalyzer();
 
     // Shared Position references for AI behavior
     const atlasPositionRef = useRef(new THREE.Vector3(0, 0, 0));
@@ -208,7 +210,11 @@ export const Experience: React.FC<ExperienceProps> = ({ characters, logs: _logs,
 
 
             {/* --- CYBERPUNK ROOM ENVIRONMENT --- */}
-            <CyberRoom onPythonError={handlePythonError} voiceCommandCode={generatedCode} />
+            <CyberRoom
+                onPythonError={handlePythonError}
+                voiceCommandCode={generatedCode}
+                getFrequencyData={getFrequencyData}
+            />
 
             {/* --- REALISTIC NIGHT SKY WITH MOON --- */}
             <RealisticSky />
@@ -241,6 +247,32 @@ export const Experience: React.FC<ExperienceProps> = ({ characters, logs: _logs,
                 color="#22d3ee"
                 videoUrl="https://www.youtube.com/embed/jfKfPfyJRdk"
             />
+
+            {/* --- AUDIO CONTROL UI Overlay (HTML) --- */}
+            <Html position={[0, 0, 0]} fullscreen style={{ pointerEvents: 'none' }}>
+                <div className="absolute top-24 left-6 pointer-events-auto">
+                    <button
+                        onClick={isAudioActive ? stopAudio : startAudio}
+                        className={`
+                            flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xs border backdrop-blur-md transition-all
+                            ${isAudioActive
+                                ? 'bg-red-500/20 border-red-500 text-red-300 hover:bg-red-500/40'
+                                : 'bg-cyan-500/20 border-cyan-500 text-cyan-300 hover:bg-cyan-500/40'
+                            }
+                        `}
+                        title="Sync visualizers to system audio (via Microphone)"
+                    >
+                        <div className={`w-2 h-2 rounded-full ${isAudioActive ? 'bg-red-500 animate-pulse' : 'bg-cyan-500'}`} />
+                        {isAudioActive ? 'STOP SYNC' : 'SYNC AUDIO'}
+                    </button>
+                    {isAudioActive && (
+                        <div className="mt-1 text-[10px] text-cyan-400/70 font-mono">
+                            Play music on speakers to visualize
+                        </div>
+                    )}
+                </div>
+            </Html>
         </>
     );
 };
+

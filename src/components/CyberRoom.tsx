@@ -4,6 +4,7 @@ import { useMemo, lazy, Suspense, useState } from 'react';
 import { usePerformanceSettings } from '../hooks/usePerformanceSettings';
 
 import { HoloProjector } from './HoloProjector';
+import { StageScreen } from './StageScreen';
 
 // Lazy load PythonEditor for better initial load performance
 const PythonEditor = lazy(() => import('./PythonEditor').then(m => ({ default: m.PythonEditor })));
@@ -11,9 +12,10 @@ const PythonEditor = lazy(() => import('./PythonEditor').then(m => ({ default: m
 interface CyberRoomProps {
     onPythonError?: (code: string, errorMessage: string) => void;
     voiceCommandCode?: string | null;
+    getFrequencyData?: () => Uint8Array | null;
 }
 
-export const CyberRoom: React.FC<CyberRoomProps> = ({ onPythonError, voiceCommandCode }) => {
+export const CyberRoom: React.FC<CyberRoomProps> = ({ onPythonError, voiceCommandCode, getFrequencyData }) => {
     const { settings } = usePerformanceSettings();
     const [hologramData, setHologramData] = useState<any>(null);
 
@@ -123,37 +125,15 @@ export const CyberRoom: React.FC<CyberRoomProps> = ({ onPythonError, voiceComman
                 infiniteGrid={settings.quality !== 'low'}
             />
 
-            {/* --- GLASS WALL PANELS --- */}
+            {/* --- AUDIO REACTIVE STAGE DISPLAYS --- */}
+            {/* Replaces the static glass walls with StageScreens */}
             {[-15, -10, 10, 15].map((x, i) => (
-                <group key={i} position={[x, 5, -10]}>
-                    <mesh position={[0, 0, 0]}>
-                        <boxGeometry args={[4, 10, 0.2]} />
-                        {settings.enableTransmission ? (
-                            <meshPhysicalMaterial
-                                color={i % 2 === 0 ? "#22d3ee" : "#d946ef"}
-                                transparent
-                                opacity={0.1}
-                                roughness={0.1}
-                                metalness={0.9}
-                                transmission={0.5}
-                                thickness={0.5}
-                            />
-                        ) : (
-                            <meshStandardMaterial
-                                color={i % 2 === 0 ? "#22d3ee" : "#d946ef"}
-                                transparent
-                                opacity={0.15}
-                                roughness={0.2}
-                                metalness={0.7}
-                            />
-                        )}
-                    </mesh>
-                    {/* Frame */}
-                    <mesh position={[0, 0, 0]}>
-                        <boxGeometry args={[4.1, 10.1, 0.1]} />
-                        <meshBasicMaterial color={i % 2 === 0 ? "#22d3ee" : "#d946ef"} wireframe transparent opacity={0.3} />
-                    </mesh>
-                </group>
+                <StageScreen
+                    key={i}
+                    position={[x, 5, -10]}
+                    color={i % 2 === 0 ? "#22d3ee" : "#d946ef"}
+                    getFrequencyData={getFrequencyData || (() => null)}
+                />
             ))}
 
             {/* --- SERVER COLUMNS --- */}
