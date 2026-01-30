@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import YouTube from 'react-youtube';
 
 interface HoloScreenProps {
     position: [number, number, number];
@@ -10,7 +11,10 @@ interface HoloScreenProps {
     title: string;
     children?: React.ReactNode;
     color?: string;
-    videoUrl?: string; // YouTube embed URL
+    videoId?: string;
+    onPlay?: () => void;
+    onPause?: () => void;
+    onEnd?: () => void;
 }
 
 export const HoloScreen: React.FC<HoloScreenProps> = ({
@@ -20,7 +24,10 @@ export const HoloScreen: React.FC<HoloScreenProps> = ({
     title,
     children,
     color = "#00f3ff",
-    videoUrl
+    videoId,
+    onPlay,
+    onPause,
+    onEnd
 }) => {
     const meshRef = useRef<THREE.Group>(null);
     const baseY = position[1];
@@ -32,6 +39,17 @@ export const HoloScreen: React.FC<HoloScreenProps> = ({
             meshRef.current.position.y = baseY + Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
         }
     });
+
+    const opts = {
+        height: '100%',
+        width: '100%',
+        playerVars: {
+            autoplay: 0,
+            controls: 1,
+            modestbranding: 1,
+            rel: 0,
+        },
+    };
 
     return (
         <group ref={meshRef} position={position} rotation={rotation} scale={scale}>
@@ -101,25 +119,26 @@ export const HoloScreen: React.FC<HoloScreenProps> = ({
                     justifyContent: 'center',
                     alignItems: 'center',
                     overflow: 'hidden',
-                    pointerEvents: videoUrl ? 'auto' : 'none',
+                    pointerEvents: videoId ? 'auto' : 'none',
                     userSelect: 'none',
-                    background: videoUrl ? '#000000' : `linear-gradient(180deg, ${color}11 0%, transparent 100%)`,
+                    background: videoId ? '#000000' : `linear-gradient(180deg, ${color}11 0%, transparent 100%)`,
                     border: 'none',
                     zIndex: 1000, // Force clickability
                 }}
                 className="holo-content"
             >
-                {videoUrl ? (
-                    <iframe
-                        width="100%"
-                        height="100%"
-                        src={videoUrl}
-                        title={title}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        style={{ border: 'none', display: 'block' }}
-                    />
+                {videoId ? (
+                    <div style={{ width: '100%', height: '100%' }}>
+                        <YouTube
+                            videoId={videoId}
+                            opts={opts}
+                            onPlay={onPlay}
+                            onPause={onPause}
+                            onEnd={onEnd}
+                            className="w-full h-full"
+                            iframeClassName="w-full h-full"
+                        />
+                    </div>
                 ) : (
                     <div className="w-full h-full text-xs font-mono text-cyan-50 opacity-90 overflow-hidden"
                         style={{ textShadow: `0 0 5px ${color}` }}>
