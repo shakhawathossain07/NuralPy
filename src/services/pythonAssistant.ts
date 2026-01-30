@@ -19,7 +19,7 @@ export const analyzePythonError = async (
     errorMessage: string
 ): Promise<ErrorAnalysis> => {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
         const prompt = `
 You are Luna, a friendly AI coding assistant. A user just ran Python code that produced an error.
@@ -49,7 +49,14 @@ Respond STRICTLY in JSON format:
 }
 `;
 
-        const result = await model.generateContent(prompt);
+        // Timeout Promise (30s for the Pro Preview model)
+        const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Request timed out after 30s")), 30000)
+        );
+
+        const apiCall = model.generateContent(prompt);
+
+        const result = await Promise.race([apiCall, timeout]) as any;
         const text = result.response.text();
 
         // Clean up markdown code blocks if present
@@ -57,9 +64,10 @@ Respond STRICTLY in JSON format:
 
         return JSON.parse(cleanText);
     } catch (error) {
-        console.error("Python Assistant analysis failed:", error);
+        console.error("❌ Python Assistant analysis failed (catch code block):", error);
 
         // Fallback analysis based on common patterns
+        console.log("🔄 Generating fallback analysis...");
         return generateFallbackAnalysis(errorMessage);
     }
 };
@@ -175,13 +183,23 @@ export const pythonAssistant = {
     /**
      * Handle a Python error - analyze and trigger callback
      */
+    /**
+     * Handle a Python error - analyze and trigger callback
+     */
     async handleError(code: string, errorMessage: string): Promise<void> {
         if (!isAssistanceModeActive || !errorCallback) {
+            console.warn("⚠️ Luna Assistance requested but inactive or no callback.");
             return;
         }
 
-        console.log("🔍 Luna is analyzing the error...");
-        const analysis = await analyzePythonError(code, errorMessage);
-        errorCallback(analysis);
+        console.log("🔍 Luna is analyzing the error...", { codeSnippet: code.slice(0, 50), errorMessage });
+
+        try {
+            const analysis = await analyzePythonError(code, errorMessage);
+            console.log("✅ Analysis complete. Triggering callback with:", analysis);
+            errorCallback(analysis);
+        } catch (e) {
+            console.error("❌ Critical error in handleError:", e);
+        }
     }
 };

@@ -76,15 +76,73 @@ export const Experience: React.FC<ExperienceProps> = ({ characters, logs: _logs,
                 console.log("🎨 Voice Command Detected: Generating 3D Object ->", objectName);
 
                 // Trigger Gemini Code Gen
+                console.log("⏳ calling generateHologramCode...");
                 generateHologramCode(objectName).then(response => {
+                    console.log("✅ generateHologramCode RESOLVED:", response);
                     setGeneratedCode(response.code);
                     addLog('action', 'Luna', `Initializing Holographic Protocol: ${response.description}`);
+                }).catch(err => {
+                    console.error("❌ generateHologramCode FAILED in Experience component:", err);
                 });
             }
         }
     }, [voiceState, transcript, addLog]);
 
     // Toggle assistance mode
+    // Callback for handling AI analysis results
+    const onAnalysisResult = useCallback(async (analysis: ErrorAnalysis) => {
+        // Display feedback
+        const feedbackText = `${analysis.explanation} ${analysis.suggestion}`;
+        setAssistanceFeedback(feedbackText);
+
+        // Log the assistance
+        addLog('action', 'Luna', `Detected ${analysis.errorType}: ${analysis.explanation}`);
+
+        // Speak the explanation via ElevenLabs
+        const voiceText = `I noticed a ${analysis.errorType}. ${analysis.explanation} ${analysis.suggestion}`;
+        // Helper to play audio (reused from original logic)
+        try {
+            const audioBuffer = await speakText(voiceText);
+
+            if (audioBuffer) {
+                const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
+                const url = URL.createObjectURL(blob);
+
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                }
+
+                const audio = new Audio(url);
+                audioRef.current = audio;
+
+                audio.onended = () => {
+                    URL.revokeObjectURL(url);
+                    // Clear feedback after speaking (optional: keep it visible)
+                    setTimeout(() => setAssistanceFeedback(""), 3000);
+                };
+
+                audio.play().catch(e => console.error("Audio playback error:", e));
+            }
+        } catch (err) {
+            console.error("Audio generation failed:", err);
+        }
+    }, [addLog]);
+
+    // Declarative Sync: Ensure pythonAssistant service matches React state
+    // This fixes the issue where HMR resets the service but React keeps the state true.
+    useEffect(() => {
+        if (isAssistanceActive) {
+            console.log("🔄 Syncing Assistant State: Enabling...");
+            pythonAssistant.enable(onAnalysisResult);
+        } else {
+            pythonAssistant.disable();
+        }
+
+        // Cleanup on unmount
+        return () => pythonAssistant.disable();
+    }, [isAssistanceActive, onAnalysisResult]);
+
+    // Toggle assistance mode (User Action)
     const toggleAssistance = useCallback(() => {
         // Helper for instant TTS feedback
         const speak = (text: string) => {
@@ -95,53 +153,23 @@ export const Experience: React.FC<ExperienceProps> = ({ characters, logs: _logs,
             }
         };
 
-        if (isAssistanceActive) {
-            pythonAssistant.disable();
-            setIsAssistanceActive(false);
+        setIsAssistanceActive(prev => {
+            const newState = !prev;
             setAssistanceFeedback("");
-            speak("Assistance mode deactivated.");
-        } else {
-            // Enable and set up callback
-            pythonAssistant.enable(async (analysis: ErrorAnalysis) => {
-                // Display feedback
-                const feedbackText = `${analysis.explanation} ${analysis.suggestion}`;
-                setAssistanceFeedback(feedbackText);
-
-                // Log the assistance
-                addLog('action', 'Luna', `Detected ${analysis.errorType}: ${analysis.explanation}`);
-
-                // Speak the explanation via ElevenLabs
-                const voiceText = `I noticed a ${analysis.errorType}. ${analysis.explanation} ${analysis.suggestion}`;
-                const audioBuffer = await speakText(voiceText);
-
-                if (audioBuffer) {
-                    // Play audio
-                    const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
-                    const url = URL.createObjectURL(blob);
-
-                    if (audioRef.current) {
-                        audioRef.current.pause();
-                    }
-
-                    const audio = new Audio(url);
-                    audioRef.current = audio;
-
-                    audio.onended = () => {
-                        URL.revokeObjectURL(url);
-                        // Clear feedback after speaking (optional: keep it visible)
-                        setTimeout(() => setAssistanceFeedback(""), 3000);
-                    };
-
-                    audio.play().catch(e => console.error("Audio playback error:", e));
-                }
-            });
-            setIsAssistanceActive(true);
-            speak("Assistance mode activated.");
-        }
-    }, [isAssistanceActive, addLog]);
+            if (newState) {
+                speak("Assistance mode activated.");
+            } else {
+                speak("Assistance mode deactivated.");
+            }
+            return newState;
+        });
+    }, []);
 
     // Handle Python errors from CyberRoom's PythonEditor
     const handlePythonError = useCallback((code: string, errorMessage: string) => {
+        if (pythonAssistant.isActive()) {
+            setAssistanceFeedback("🧠 Analyzing interaction...");
+        }
         pythonAssistant.handleError(code, errorMessage);
     }, []);
 
@@ -165,7 +193,7 @@ export const Experience: React.FC<ExperienceProps> = ({ characters, logs: _logs,
             <PerspectiveCamera makeDefault position={[0, 4, 12]} fov={50} />
             <OrbitControls
                 maxPolarAngle={Math.PI / 2 - 0.05}
-                minDistance={5}
+                minDistance={0.5}
                 maxDistance={20}
                 target={[0, 2, 0]}
             />

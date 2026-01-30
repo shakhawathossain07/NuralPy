@@ -39,18 +39,6 @@ function AppContent() {
             </Suspense>
           </Canvas>
 
-          {/* 2D Overlay Controls */}
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 pointer-events-auto">
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className={`px-8 py-3 rounded-full font-bold tracking-widest uppercase text-sm border backdrop-blur-md transition-all ${isPlaying
-                ? 'bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.5)]'
-                : 'bg-cyan-500/20 border-cyan-500 text-cyan-400 hover:bg-cyan-500/40 shadow-[0_0_20px_rgba(34,211,238,0.5)]'
-                }`}
-            >
-              {isPlaying ? 'Terminate Engine' : 'Initialize Simulation'}
-            </button>
-          </div>
 
           {/* Quality Toggle Button */}
           <div className="absolute bottom-10 right-6 pointer-events-auto">

@@ -254,6 +254,14 @@ export const PythonEditor: React.FC<PythonEditorProps> = (props) => {
     useEffect(() => {
         console.log("🛠️ Auto-Run Check:", { isPyodideReady, externalCode, lastRun: lastAutoRunCode.current });
 
+        // Debug: Log why it might NOT be running
+        if (externalCode && externalCode === lastAutoRunCode.current) {
+            console.log("⚠️ Skipping auto-run: Code already ran.");
+        }
+        if (externalCode && !isPyodideReady) {
+            console.log("⚠️ Skipping auto-run: Pyodide not ready.");
+        }
+
         if (isPyodideReady && externalCode && externalCode !== lastAutoRunCode.current) {
             console.log("🚀 Auto-running external code now!");
             const timeout = setTimeout(() => {
@@ -265,20 +273,23 @@ export const PythonEditor: React.FC<PythonEditorProps> = (props) => {
     }, [isPyodideReady, externalCode]);
 
     return (
-        <div style={{
-            width: '800px', // Wider for split view in learning mode
-            height: '500px',
-            backgroundColor: 'rgba(10, 10, 16, 0.95)',
-            border: `2px solid ${mode === TutorMode.LEARNING ? '#a78bfa' : '#22d3ee'}`,
-            borderRadius: '8px',
-            boxShadow: `0 0 20px ${mode === TutorMode.LEARNING ? 'rgba(167, 139, 250, 0.3)' : 'rgba(34, 211, 238, 0.3)'}`,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
-            color: '#e0e7ff',
-            transition: 'all 0.3s ease'
-        }}>
+        <div
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerOver={(e) => e.stopPropagation()}
+            style={{
+                width: '800px', // Wider for split view in learning mode
+                height: '500px',
+                backgroundColor: 'rgba(10, 10, 16, 0.95)',
+                border: `2px solid ${mode === TutorMode.LEARNING ? '#a78bfa' : '#22d3ee'}`,
+                borderRadius: '8px',
+                boxShadow: `0 0 20px ${mode === TutorMode.LEARNING ? 'rgba(167, 139, 250, 0.3)' : 'rgba(34, 211, 238, 0.3)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
+                color: '#e0e7ff',
+                transition: 'all 0.3s ease'
+            }}>
             {/* Header */}
             <div style={{
                 padding: '8px 16px',

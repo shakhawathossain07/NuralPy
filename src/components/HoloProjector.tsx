@@ -58,7 +58,11 @@ export const HoloProjector: React.FC<HoloProjectorProps> = ({
             return def;
         };
 
-        switch (shapeData.shape) {
+        // Normalize shape to lowercase for case-insensitive matching
+        const normalizedShape = (shapeData.shape || 'box').toLowerCase();
+        console.log("🔷 HoloProjector rendering shape:", normalizedShape, "| Original:", shapeData.shape);
+
+        switch (normalizedShape) {
             case 'box':
                 geometry = <boxGeometry args={getArgs([2, 2, 2]) as any} />;
                 break;
